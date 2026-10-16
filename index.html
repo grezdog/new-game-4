@@ -1,0 +1,604 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Angry Rabbits: Meme Mayhem</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#141526;color:white;font-family:Arial,sans-serif;text-align:center}
+header{padding:12px;background:#10101d}
+h1{margin:3px;color:#ffe16b}
+#game{display:block;width:min(100%,960px);height:auto;margin:auto;touch-action:none}
+.controls{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;padding:12px}
+button{padding:10px 16px;border:0;border-radius:9px;background:#ffe16b;color:#171727;font-weight:bold;cursor:pointer}
+button:hover{background:#fff1a8}
+#message{padding:4px 10px;min-height:25px;color:#ffe16b;font-weight:bold}
+.small{color:#c7c9df;font-size:13px;padding:0 10px 12px}
+</style>
+</head>
+<body>
+<header>
+<h1>🐰 ANGRY RABBITS: MEME MAYHEM</h1>
+<div id="status">Level 1 / 50</div>
+</header>
+<canvas id="game" width="960" height="540"></canvas>
+<div class="controls">
+<button id="restart">Restart Level</button>
+<button id="next">Next Level ➜</button>
+<button id="sound">Sound: On</button>
+</div>
+<div id="message">Pull the rabbit back and launch! The rabbits now fly much farther.</div>
+<p class="small">50 different meme-inspired backgrounds • Bouncy towers • Secret city level 9</p>
+
+<script>
+(() => {
+"use strict";
+
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+const W=960,H=540,G=466;
+const status=document.getElementById("status");
+const message=document.getElementById("message");
+
+const themes=[
+["Doge Day","much sky. very rabbit.","#f7d88a","#c4e9a2"],
+["Among the Clouds","SUS TOWER DETECTED","#a9d8ff","#c4b2f4"],
+["Keyboard Smash","ASDFGHJKL!!!","#f5a6b8","#f9d5a7"],
+["Stonks City","📈 TO THE MOON","#91c9a4","#d9f0ad"],
+["Galaxy Brain","THE BIG BRAIN PLAN","#181b4d","#6965c7"],
+["Banana Mode","BANANA.EXE ACTIVATED","#ffe46e","#a4d76b"],
+["No Thoughts","head empty. only carrots.","#9eddf3","#e5b5e8"],
+["Maximum Goofy","GOOFY LEVEL: 100","#ffbd83","#fff0a5"],
+["Secret City","MISSION: RESCUE THE HAWKS","#a8ddff","#d6e8f7"],
+["Loading...","PLEASE WAIT...","#b3b6ca","#e8e8ef"],
+["Lag Simulator","PING: 999","#a2d5c7","#e6e8a0"],
+["Space Rabbits","Houston, we have carrots","#151b46","#464f9a"],
+["Meme Museum","VERY RARE. MUCH WOW.","#f7c3d5","#f8e9ad"],
+["Brainrot Fields","ABSOLUTE CINEMA","#c8b6ff","#8bd9b3"],
+["NPC Village","WHAT A NICE DAY","#91d8c7","#f2dd94"],
+["Error 404","TOWER NOT FOUND","#25293b","#656b82"],
+["Rainbow Road","WHEEEEEEEEE","#ffb5d0","#a8f0f2"],
+["Frozen Internet","bro is FREEZING","#bde8ff","#e4f8ff"],
+["Desert Meme","SAND IS SAND","#f0c078","#f6df9c"],
+["The Backrooms","WHY IS IT YELLOW","#d7c86b","#a6a34b"],
+["Cat Energy","MEOW? NO. BUNNY.","#f4b9d9","#c8e9a2"],
+["Pixel World","8-BIT RABBIT","#8ad0a4","#e6d77e"],
+["Underwater LOL","BLUB BLUB BRUH","#61c7e9","#9be8e4"],
+["Jelly World","BOING BOING BOING","#eeb9ff","#a9f5df"],
+["Volcano Vibes","THIS IS FINE","#ef9577","#ffce79"],
+["Winter Brainrot","COLD BUT GOOFY","#a9d9ff","#f0f8ff"],
+["Disco Fever","DANCE MODE ON","#e59dff","#f8d6ff"],
+["Gaming Setup","ONE MORE ROUND","#91baff","#9ee9c7"],
+["Spooky Season","SPOOKY CARROTS","#393052","#7774a8"],
+["Candy Dimension","SUGAR RUSH","#ffb6d5","#ffe9a5"],
+["Retro Arcade","INSERT CARROT","#24194c","#5e4eab"],
+["Cloud Kingdom","TOUCH GRASS? NEVER","#b5e5ff","#f8fbff"],
+["Magma Meme","HOT HOT HOT","#e76d59","#f4bb6b"],
+["Alien Invasion","TAKE ME TO YOUR BUNNY","#6ad3c6","#9d8de9"],
+["Farm Chaos","THE CARROTS ARE WINNING","#9fd37e","#f1db8a"],
+["Internet Café","404 BRAIN NOT FOUND","#a4c5ef","#f5c8e5"],
+["Dream World","IS THIS REAL LIFE?","#a9a0ef","#f7c8eb"],
+["The Matrix","FOLLOW THE CARROT","#1b493e","#4c9272"],
+["Meme Olympics","GOLD MEDAL GOOFY","#ffd66e","#9ad8fa"],
+["Giant Garden","SMALL BUNNY. BIG DREAMS.","#86d17b","#c8e9a0"],
+["Final Brain Cell","WE ARE SO BACK","#8e9eff","#f5c3e9"],
+["Y2K Internet","WELCOME ONLINE","#a5f0ed","#f5b8d8"],
+["Marshmallow Land","SOFT BONK","#f8c9e8","#fff2f9"],
+["Tropical LOL","NO WIFI ON ISLAND","#5ccfc2","#f6d47a"],
+["Moon Base","CARROT GRAVITY","#262b63","#7479c6"],
+["Lava Lamp","VIBES ONLY","#e58dd2","#f3b86c"],
+["Meme Factory","CERTIFIED MEME","#b4b7c8","#f3c2a1"],
+["Giant Pizza","PIZZA TIME","#ffc17d","#f5df9d"],
+["The Final Tower","FINAL BOSS ENERGY","#454b8f","#a7b8ff"],
+["Ultra Goofy","THE GOOBER DIMENSION","#faabdb","#b3f4dc"],
+["Victory Island","WE DID IT, BRUH","#75c9ae","#ffe68b"]
+];
+
+let level=1,blocks=[],hawks=[],stars=[],rabbit=null;
+let dragging=false,dragPos={x:155,y:365};
+let shots=3,won=false,gameOver=false,soundOn=true;
+let city=null,keys={},particles=[];
+let lastTime=0;
+
+const rand=(a,b)=>a+Math.random()*(b-a);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+function beep(freq=400,duration=.07){
+ if(!soundOn)return;
+ try{
+  const A=window.AudioContext||window.webkitAudioContext;
+  if(!A)return;
+  const ac=new A(),o=ac.createOscillator(),g=ac.createGain();
+  o.frequency.value=freq;g.gain.value=.035;
+  o.connect(g);g.connect(ac.destination);o.start();
+  g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+duration);
+  o.stop(ac.currentTime+duration);o.onended=()=>ac.close();
+ }catch(e){}
+}
+
+function makeBlock(x,y,w,h,type="wood"){
+ return {x,y,w,h,type,alive:true,vx:0,vy:0,angle:0,spin:0,
+         bounce:.17,rest:0};
+}
+function makeHawk(x,y){
+ return {x,y,r:16,alive:true};
+}
+
+function buildLevel(n){
+ level=n;blocks=[];hawks=[];stars=[];particles=[];
+ won=false;gameOver=false;shots=3;city=null;dragging=false;
+ rabbit={x:155,y:365,vx:0,vy:0,r:17,launched:false,alive:true,plane:false};
+ dragPos={x:155,y:365};
+
+ if(n===9){
+  city={rescued:0,required:3};
+  rabbit={x:110,y:240,vx:0,vy:0,r:20,launched:true,alive:true,plane:true};
+  stars=[
+   {x:220,y:160,got:false},{x:370,y:290,got:false},
+   {x:530,y:145,got:false},{x:690,y:265,got:false},
+   {x:840,y:165,got:false}
+  ];
+  hawks=[makeHawk(300,110),makeHawk(580,330),makeHawk(800,115)];
+  message.textContent="SECRET LEVEL 9! Fly with WASD or arrow keys. Collect stars and rescue all 3 hawks!";
+ }else{
+  const towerCount=2+(n%3);
+  for(let t=0;t<towerCount;t++){
+   const bx=470+t*110+(n%2)*10;
+   const floors=2+(n%3);
+   for(let f=0;f<floors;f++){
+    blocks.push(makeBlock(bx,G-22-f*42,70,30,
+      (f+t+n)%4===0?"carrot":"wood"));
+   }
+   blocks.push(makeBlock(bx,G-7,82,12,"platform"));
+   if(n%4===0){
+    blocks.push(makeBlock(bx+20,G-28-floors*42,34,30,"stone"));
+   }
+  }
+  for(let i=0;i<1+(n%4);i++)hawks.push(makeHawk(530+i*85,G-45-(i%2)*55));
+  if(n%5===0){
+   blocks.push(makeBlock(370,G-20,48,32,"stone"));
+   blocks.push(makeBlock(400,G-62,42,28,"wood"));
+  }
+  message.textContent="Pull back farther for a powerful launch! Knock down the towers and rescue the hawks.";
+ }
+ status.textContent="Level "+n+" / 50"+(n===9?" • SECRET LEVEL":"");
+}
+
+function drawBackground(){
+ const th=themes[level-1];
+ const sky=ctx.createLinearGradient(0,0,0,H);
+ sky.addColorStop(0,th[2]);sky.addColorStop(1,th[3]);
+ ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+
+ // Each level has its own scene details.
+ ctx.save();
+ if(level===5||level===12||level===44){
+  for(let i=0;i<100;i++){
+   const x=(i*137)%W,y=(i*83)%390;
+   ctx.fillStyle=i%3===0?"#fff5a4":"#fff";
+   ctx.fillRect(x,y,2+(i%3),2+(i%3));
+  }
+ }else if(level===19||level===28){
+  ctx.fillStyle="rgba(35,25,55,.17)";
+  for(let x=0;x<W;x+=90)ctx.fillRect(x,0,38,H);
+ }else if(level===22){
+  ctx.fillStyle="rgba(255,255,255,.25)";
+  for(let i=0;i<50;i++){
+   ctx.beginPath();ctx.arc((i*71)%W,(i*43)%H,rand(2,5),0,Math.PI*2);ctx.fill();
+  }
+ }else{
+  // Clouds, stars, bubbles, and pixel decorations vary by theme.
+  for(let i=0;i<7;i++){
+   const x=(i*157+40)%W,y=55+(i*47)%170;
+   ctx.fillStyle="rgba(255,255,255,.45)";
+   ctx.beginPath();
+   ctx.arc(x,y,17,0,Math.PI*2);
+   ctx.arc(x+19,y+5,14,0,Math.PI*2);
+   ctx.arc(x-18,y+7,12,0,Math.PI*2);ctx.fill();
+  }
+ }
+ if(level===6||level===20||level===46){
+  for(let i=0;i<9;i++){
+   ctx.fillStyle=i%2?"#ffcf55":"#ff914d";
+   ctx.beginPath();ctx.arc(40+i*110,80+(i%3)*65,12,0,Math.PI*2);ctx.fill();
+  }
+ }
+ if(level===16||level===30||level===40){
+  for(let i=0;i<12;i++){
+   ctx.fillStyle=i%2?"#fff":"#ffe16b";
+   ctx.fillRect((i*89)%W,(i*59)%350,6,6);
+  }
+ }
+ ctx.restore();
+
+ // Distant hills and themed ground.
+ ctx.fillStyle=level===24?"#e8f5ff":level===25?"#bc7959":th[3];
+ ctx.beginPath();ctx.moveTo(0,G);
+ for(let x=0;x<=W;x+=80)ctx.lineTo(x,G-25-Math.sin(x*.012+level)*25);
+ ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.fill();
+
+ ctx.fillStyle=level===25?"#a84d42":level===18?"#d7a95e":"#4f9b51";
+ ctx.fillRect(0,G,W,H-G);
+ ctx.fillStyle="rgba(30,50,35,.2)";
+ for(let x=0;x<W;x+=30)ctx.fillRect(x,G+18,15,3);
+
+ // Meme caption.
+ ctx.fillStyle="rgba(15,18,35,.73)";
+ rounded(245,18,470,60,12,"rgba(15,18,35,.73)");
+ ctx.textAlign="center";ctx.fillStyle="#fff";
+ ctx.font="bold 23px Arial";ctx.fillText(th[0].toUpperCase(),480,42);
+ ctx.fillStyle="#ffe16b";ctx.font="bold 15px Arial";
+ ctx.fillText(th[1],480,62);ctx.textAlign="left";
+}
+
+function drawCity(){
+ const sky=ctx.createLinearGradient(0,0,0,H);
+ sky.addColorStop(0,"#8bd7ff");sky.addColorStop(1,"#f2fbff");
+ ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+ ctx.fillStyle="#fff1a7";ctx.beginPath();ctx.arc(840,75,32,0,Math.PI*2);ctx.fill();
+ const bs=[
+ [0,105,180,"#9ab6cf"],[110,115,250,"#7f9fbe"],
+ [230,90,205,"#b3c8dc"],[325,120,300,"#829fba"],
+ [450,105,220,"#a9c0d4"],[560,115,280,"#7899b8"],
+ [680,95,190,"#b3c8dc"],[780,100,245,"#8ba9c5"],
+ [885,75,170,"#b3c8dc"]
+ ];
+ for(const [x,w,h,c] of bs){
+  const y=G-h;ctx.fillStyle=c;ctx.fillRect(x,y,w,h);
+  ctx.fillStyle="#fff0a8";
+  for(let wx=x+12;wx<x+w-8;wx+=24)
+   for(let wy=y+16;wy<G-10;wy+=28)ctx.fillRect(wx,wy,10,13);
+  ctx.fillStyle="#6f8aa4";ctx.fillRect(x,y,w,5);
+ }
+ ctx.fillStyle="#4b5264";ctx.fillRect(0,G,W,H-G);
+ ctx.fillStyle="#fff";
+ for(let x=15;x<W;x+=80)ctx.fillRect(x,G+35,42,5);
+ rounded(220,15,520,58,12,"rgba(15,18,35,.78)");
+ ctx.textAlign="center";ctx.fillStyle="#fff";ctx.font="bold 22px Arial";
+ ctx.fillText("SECRET CITY RESCUE",480,40);
+ ctx.fillStyle="#ffe16b";ctx.font="bold 14px Arial";
+ ctx.fillText("FLY SAFE • COLLECT STARS • RESCUE HAWKS",480,60);
+ ctx.textAlign="left";
+}
+
+function rounded(x,y,w,h,r,fill){
+ ctx.fillStyle=fill;ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill();
+}
+
+function drawSlingshot(){
+ ctx.strokeStyle="#70401f";ctx.lineWidth=13;ctx.lineCap="round";
+ ctx.beginPath();ctx.moveTo(145,425);ctx.lineTo(150,352);ctx.lineTo(132,320);ctx.stroke();
+ ctx.beginPath();ctx.moveTo(150,352);ctx.lineTo(173,320);ctx.stroke();
+ if(dragging){
+  ctx.strokeStyle="#6b3c24";ctx.lineWidth=4;
+  ctx.beginPath();ctx.moveTo(132,320);ctx.lineTo(dragPos.x,dragPos.y);ctx.lineTo(173,320);ctx.stroke();
+ }
+}
+
+function drawRabbit(r){
+ if(!r||!r.alive)return;
+ ctx.save();ctx.translate(r.x,r.y);
+ if(r.plane){
+  ctx.fillStyle="#f5f5fa";ctx.strokeStyle="#44506b";ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(-26,2);ctx.lineTo(4,-9);ctx.lineTo(28,0);
+  ctx.lineTo(4,10);ctx.closePath();ctx.fill();ctx.stroke();
+  ctx.beginPath();ctx.ellipse(0,-4,15,12,0,0,Math.PI*2);ctx.fill();ctx.stroke();
+  ctx.beginPath();ctx.ellipse(-6,-17,4,12,-.15,0,Math.PI*2);ctx.fill();ctx.stroke();
+  ctx.beginPath();ctx.ellipse(4,-18,4,12,.15,0,Math.PI*2);ctx.fill();ctx.stroke();
+  ctx.fillStyle="#222";ctx.beginPath();ctx.arc(6,-6,2,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle="#ff8298";ctx.beginPath();ctx.arc(12,-3,3,0,Math.PI*2);ctx.fill();
+ }else{
+  ctx.fillStyle="#f5f5fa";ctx.strokeStyle="#414c63";ctx.lineWidth=2;
+  ctx.beginPath();ctx.ellipse(0,0,18,16,0,0,Math.PI*2);ctx.fill();ctx.stroke();
+  ctx.beginPath();ctx.ellipse(-7,-19,5,14,-.15,0,Math.PI*2);ctx.fill();ctx.stroke();
+  ctx.beginPath();ctx.ellipse(5,-20,5,14,.15,0,Math.PI*2);ctx.fill();ctx.stroke();
+  ctx.fillStyle="#222";ctx.beginPath();ctx.arc(7,-3,2.5,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle="#ff8399";ctx.beginPath();ctx.arc(13,3,3,0,Math.PI*2);ctx.fill();
+ }
+ ctx.restore();
+}
+
+function drawBlock(b){
+ if(!b.alive)return;
+ ctx.save();
+ ctx.translate(b.x,b.y);ctx.rotate(b.angle);
+ ctx.fillStyle=b.type==="carrot"?"#f28c28":b.type==="stone"?"#8592a2":b.type==="platform"?"#77543b":"#b77a45";
+ ctx.strokeStyle=b.type==="carrot"?"#a95218":"#714c36";ctx.lineWidth=2;
+ ctx.fillRect(-b.w/2,-b.h/2,b.w,b.h);ctx.strokeRect(-b.w/2,-b.h/2,b.w,b.h);
+ if(b.type==="carrot"){
+  ctx.fillStyle="#4f9e45";ctx.beginPath();ctx.moveTo(0,-b.h/2);ctx.lineTo(-5,-b.h/2-10);ctx.lineTo(3,-b.h/2-6);ctx.lineTo(8,-b.h/2-11);ctx.closePath();ctx.fill();
+  ctx.strokeStyle="#ffc16c";ctx.beginPath();ctx.moveTo(-12,-2);ctx.lineTo(12,2);ctx.stroke();
+ }else if(b.type==="wood"){
+  ctx.strokeStyle="#e5b27a";ctx.beginPath();ctx.moveTo(-b.w/2+6,0);ctx.lineTo(b.w/2-6,0);ctx.stroke();
+ }
+ ctx.restore();
+}
+
+function drawHawk(h){
+ if(!h.alive)return;
+ ctx.save();ctx.translate(h.x,h.y);
+ ctx.fillStyle="#5b4a77";ctx.beginPath();ctx.ellipse(0,0,17,12,0,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle="#40334f";ctx.beginPath();ctx.moveTo(-3,0);ctx.lineTo(-24,-10);ctx.lineTo(-15,4);ctx.lineTo(-23,11);ctx.closePath();ctx.fill();
+ ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(8,-4,4,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle="#222";ctx.beginPath();ctx.arc(9,-4,2,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle="#ffbf4d";ctx.beginPath();ctx.moveTo(15,1);ctx.lineTo(25,5);ctx.lineTo(15,7);ctx.fill();
+ ctx.restore();
+}
+
+function drawStars(){
+ for(const s of stars){
+  if(s.got)continue;
+  ctx.save();ctx.translate(s.x,s.y);ctx.fillStyle="#ffcf33";ctx.strokeStyle="#fff2a6";ctx.lineWidth=2;
+  ctx.beginPath();
+  for(let i=0;i<10;i++){
+   const a=-Math.PI/2+i*Math.PI/5,r=i%2===0?12:5;
+   if(i===0)ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r);
+   else ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);
+  }
+  ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();
+ }
+}
+
+function drawAim(){
+ if(!dragging)return;
+ const dx=155-dragPos.x,dy=365-dragPos.y;
+ const vx=dx*6.2,vy=dy*6.2;
+ ctx.fillStyle="#fff";
+ for(let i=1;i<=24;i++){
+  const t=i*.11;
+  ctx.beginPath();ctx.arc(155+vx*t,365+vy*t+0.5*300*t*t/2,2.5,0,Math.PI*2);ctx.fill();
+ }
+}
+
+function drawHUD(){
+ rounded(12,12,200,42,9,"rgba(15,18,35,.78)");
+ ctx.fillStyle="#fff";ctx.font="bold 17px Arial";
+ ctx.fillText("LEVEL "+level+" / 50",24,30);
+ ctx.font="14px Arial";
+ ctx.fillText(level===9?"Hawks rescued: "+(city?city.rescued:0)+"/3":"Rabbits left: "+shots,24,47);
+}
+
+function draw(){
+ if(level===9)drawCity();else drawBackground();
+ if(level!==9)drawSlingshot();
+ drawStars();
+ for(const b of blocks)drawBlock(b);
+ for(const h of hawks)drawHawk(h);
+ if(level!==9)drawAim();
+ drawRabbit(rabbit);drawHUD();
+
+ for(const p of particles){
+  ctx.globalAlpha=clamp(p.life,0,1);ctx.fillStyle=p.color;
+  ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();
+ }
+ ctx.globalAlpha=1;
+
+ if(won||gameOver){
+  ctx.fillStyle="rgba(10,12,25,.76)";ctx.fillRect(0,0,W,H);
+  ctx.textAlign="center";ctx.fillStyle=won?"#ffe16b":"#fff";
+  ctx.font="bold 40px Arial";
+  ctx.fillText(won?(level===9?"CITY RESCUE COMPLETE!":"LEVEL COMPLETE!"):"TRY AGAIN!",W/2,H/2-12);
+  ctx.font="20px Arial";ctx.fillStyle="#fff";
+  ctx.fillText(won?"WE ARE SO BACK!":"Press Restart Level to try again.",W/2,H/2+28);
+  ctx.textAlign="left";
+ }
+}
+
+function particlesAt(x,y,color,count=8){
+ for(let i=0;i<count;i++)particles.push({
+  x,y,vx:rand(-130,130),vy:rand(-170,20),life:1,r:rand(2,5),color
+ });
+}
+
+// Simple fixed rectangular hitboxes: no huge expanding boxes when blocks tilt.
+function hitbox(b){
+ return {l:b.x-b.w/2,r:b.x+b.w/2,t:b.y-b.h/2,b:b.y+b.h/2};
+}
+function circleHitsBlock(c,block){
+ const q=hitbox(block);
+ const x=clamp(c.x,q.l,q.r),y=clamp(c.y,q.t,q.b);
+ return (c.x-x)**2+(c.y-y)**2<c.r*c.r;
+}
+
+function rabbitBlockHit(b){
+ if(!b.alive||!rabbit.alive||!circleHitsBlock(rabbit,b))return;
+ const dx=rabbit.x-b.x,dy=rabbit.y-b.y;
+ const ox=rabbit.r+b.w/2-Math.abs(dx);
+ const oy=rabbit.r+b.h/2-Math.abs(dy);
+ if(ox<oy){
+  const dir=Math.sign(dx||1);
+  rabbit.x+=dir*ox;
+  b.vx+=dir*Math.min(95,Math.abs(rabbit.vx)*.24);
+  b.spin+=dir*Math.min(.9,Math.abs(rabbit.vx)*.0015);
+  rabbit.vx=-rabbit.vx*.42;
+ }else{
+  const dir=Math.sign(dy||1);
+  rabbit.y+=dir*oy;
+  b.vy+=dir*Math.min(70,Math.abs(rabbit.vy)*.20);
+  rabbit.vy=-rabbit.vy*.32;
+ }
+ // Strong damping keeps towers mostly upright and lets them settle.
+ b.vx*=.88;b.vy*=.9;b.spin*=.8;
+ rabbit.vx*=.86;rabbit.vy*=.9;
+ beep(220,.04);particlesAt(rabbit.x,rabbit.y,"#f3bc7c",3);
+}
+
+function blocksCollide(){
+ for(let pass=0;pass<2;pass++){
+  for(let i=0;i<blocks.length;i++){
+   const a=blocks[i];if(!a.alive)continue;
+   const A=hitbox(a);
+   for(let j=i+1;j<blocks.length;j++){
+    const b=blocks[j];if(!b.alive)continue;
+    const B=hitbox(b);
+    const ox=Math.min(A.r,B.r)-Math.max(A.l,B.l);
+    const oy=Math.min(A.b,B.b)-Math.max(A.t,B.t);
+    if(ox<=0||oy<=0)continue;
+
+    if(ox<oy){
+     const dir=a.x<b.x?-1:1;
+     a.x+=dir*ox*.5;b.x-=dir*ox*.5;
+     const av=a.vx,bv=b.vx;
+     a.vx=bv*.2+dir*10;b.vx=av*.2-dir*10;
+     a.spin+=dir*.025;b.spin-=dir*.025;
+    }else{
+     const dir=a.y<b.y?-1:1;
+     a.y+=dir*oy*.5;b.y-=dir*oy*.5;
+     const av=a.vy,bv=b.vy;
+     a.vy=bv*.17+dir*8;b.vy=av*.17-dir*8;
+     a.spin+=dir*.015;b.spin-=dir*.015;
+    }
+    a.vx*=.75;b.vx*=.75;
+   }
+  }
+ }
+}
+
+function normalPhysics(dt){
+ if(rabbit&&rabbit.alive&&rabbit.launched){
+  rabbit.vy+=300*dt;
+  rabbit.x+=rabbit.vx*dt;rabbit.y+=rabbit.vy*dt;
+  if(rabbit.y+rabbit.r>G){
+   rabbit.y=G-rabbit.r;rabbit.vy=-rabbit.vy*.22;rabbit.vx*=.88;
+   if(Math.abs(rabbit.vy)<30)rabbit.vy=0;
+  }
+  for(const b of blocks)rabbitBlockHit(b);
+  for(const h of hawks){
+   if(!h.alive)continue;
+   if(Math.hypot(rabbit.x-h.x,rabbit.y-h.y)<rabbit.r+h.r){
+    h.alive=false;particlesAt(h.x,h.y,"#c4a6ed",14);beep(680,.1);
+   }
+  }
+  if(rabbit.x>W+100||rabbit.x<-100||rabbit.y>H+120)rabbit.alive=false;
+ }
+
+ for(const b of blocks){
+  if(!b.alive)continue;
+  b.vy+=280*dt;
+  b.x+=b.vx*dt;b.y+=b.vy*dt;
+  b.angle+=b.spin*dt;
+  // Gradually remove spin and movement after impacts.
+  b.spin*=Math.pow(.86,dt*60);
+  b.vx*=Math.pow(.82,dt*60);
+  b.vy*=Math.pow(.98,dt*60);
+
+  if(b.y+b.h/2>G){
+   b.y=G-b.h/2;
+   if(Math.abs(b.vy)>12)b.vy=-b.vy*b.bounce;
+   else b.vy=0;
+   b.vx*=.72;b.spin*=.45;
+  }
+  if(Math.abs(b.vx)<2)b.vx=0;
+  if(Math.abs(b.spin)<.015)b.spin=0;
+  if(b.x+b.w/2<0||b.x-b.w/2>W+120)b.alive=false;
+ }
+ blocksCollide();
+
+ if(hawks.every(h=>!h.alive)){
+  won=true;message.textContent="All hawks rescued! Level complete!";beep(780,.16);
+ }else if(!rabbit.alive&&shots<=0){
+  gameOver=true;message.textContent="Out of rabbits! Restart to try again.";
+ }
+}
+
+function cityPhysics(dt){
+ if(!rabbit||!rabbit.alive||won)return;
+ const sp=250;
+ if(keys.ArrowUp||keys.w||keys.W)rabbit.vy-=sp*dt*2;
+ if(keys.ArrowDown||keys.s||keys.S)rabbit.vy+=sp*dt*2;
+ if(keys.ArrowLeft||keys.a||keys.A)rabbit.vx-=sp*dt*2;
+ if(keys.ArrowRight||keys.d||keys.D)rabbit.vx+=sp*dt*2;
+ rabbit.vx+=80*dt;rabbit.vx*=Math.pow(.985,dt*60);
+ rabbit.vy*=Math.pow(.97,dt*60);
+ rabbit.x=clamp(rabbit.x+rabbit.vx*dt,25,W-25);
+ rabbit.y=clamp(rabbit.y+rabbit.vy*dt,30,G-28);
+
+ const buildings=[
+  [0,105,180],[110,115,250],[230,90,205],[325,120,300],
+  [450,105,220],[560,115,280],[680,95,190],[780,100,245],[885,75,170]
+ ];
+ for(const [x,w,h] of buildings){
+  if(rabbit.x>x-20&&rabbit.x<x+w+20&&rabbit.y>G-h-12){
+   rabbit.y=G-h-14;rabbit.vy=-Math.abs(rabbit.vy)*.4-18;rabbit.vx*=-.2;
+  }
+ }
+ for(const s of stars){
+  if(!s.got&&Math.hypot(rabbit.x-s.x,rabbit.y-s.y)<rabbit.r+12){
+   s.got=true;particlesAt(s.x,s.y,"#ffe16b",12);beep(880,.1);
+  }
+ }
+ for(const h of hawks){
+  if(h.alive&&Math.hypot(rabbit.x-h.x,rabbit.y-h.y)<rabbit.r+h.r+3){
+   h.alive=false;city.rescued++;particlesAt(h.x,h.y,"#c4a6ed",14);beep(700,.12);
+   message.textContent="Hawk rescued! "+city.rescued+" of 3.";
+  }
+ }
+ if(city.rescued>=3){
+  won=true;message.textContent="Secret city mission complete!";beep(920,.2);
+ }
+}
+
+function update(dt){
+ if(level===9)cityPhysics(dt);else normalPhysics(dt);
+ for(const p of particles){
+  p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=150*dt;p.life-=dt*1.4;
+ }
+ particles=particles.filter(p=>p.life>0);
+}
+
+function loop(ts){
+ const dt=Math.min(.033,(ts-lastTime)/1000||0);
+ lastTime=ts;
+ if(!won&&!gameOver)update(dt);
+ draw();requestAnimationFrame(loop);
+}
+
+function pointerPos(e){
+ const r=canvas.getBoundingClientRect();
+ return {x:(e.clientX-r.left)*W/r.width,y:(e.clientY-r.top)*H/r.height};
+}
+canvas.addEventListener("pointerdown",e=>{
+ if(level===9||won||gameOver||!rabbit||!rabbit.alive||rabbit.launched||shots<=0)return;
+ const p=pointerPos(e);
+ if(Math.hypot(p.x-rabbit.x,p.y-rabbit.y)<55){
+  dragging=true;dragPos=p;canvas.setPointerCapture(e.pointerId);
+ }
+});
+canvas.addEventListener("pointermove",e=>{
+ if(!dragging)return;
+ const p=pointerPos(e);
+ dragPos={x:clamp(p.x,55,210),y:clamp(p.y,260,435)};
+});
+canvas.addEventListener("pointerup",()=>{
+ if(!dragging)return;
+ dragging=false;
+ const dx=155-dragPos.x,dy=365-dragPos.y;
+ if(Math.hypot(dx,dy)>8){
+  rabbit.x=155;rabbit.y=365;
+  // Much stronger launch force plus lower gravity for longer flights.
+  rabbit.vx=dx*6.2;
+  rabbit.vy=dy*6.2;
+  rabbit.launched=true;shots--;beep(360,.08);
+ }
+});
+
+window.addEventListener("keydown",e=>{
+ keys[e.key]=true;
+ if(level===9&&["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key))e.preventDefault();
+});
+window.addEventListener("keyup",e=>keys[e.key]=false);
+
+document.getElementById("restart").onclick=()=>buildLevel(level);
+document.getElementById("next").onclick=()=>buildLevel(level>=50?1:level+1);
+document.getElementById("sound").onclick=e=>{
+ soundOn=!soundOn;e.currentTarget.textContent="Sound: "+(soundOn?"On":"Off");
+};
+
+buildLevel(1);
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
